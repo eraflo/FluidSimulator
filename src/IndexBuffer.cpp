@@ -10,7 +10,7 @@ IndexBuffer::IndexBuffer(const unsigned int* data, unsigned int count)
 
     GLCall(glGenBuffers(1, &m_RendererID)); //donne un id (unique) au buffer
     GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RendererID)); //selection du buffer pour l'utiliser
-    GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(unsigned int), data, GL_STATIC_DRAW)); //taille du buffer
+    GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(unsigned int), data, GL_DYNAMIC_DRAW)); //taille du buffer
 }
 
 IndexBuffer::~IndexBuffer()

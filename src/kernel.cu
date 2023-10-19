@@ -17,7 +17,6 @@
 #include "Entête/IndexBuffer.h"
 #include "Entête/VertexArray.h"
 #include "Entête/Shader.h"
-#include "../src/Entête/Particules.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -40,27 +39,21 @@
 #include "imgui/imgui_impl_opengl3.h"
 
 #include "test/TestClearColor.h"
+#include "test/TestTexture2D.h"
+#include "test/TestColor2D.h"
+#include "test/TestColor3D.h"
 
-#define WIDTH 1280
-#define HEIGHT 720
-#define BlockSize 256
+#include "Entête/Const.h"
 
-
+/*
 
 int main()
 {
     GLFWwindow* window;
     
-    Particules* particule = new Particules();
-    Point* center = new Point();
-    center->x = 0.0f;
-    center->y = 0.0f;
-    center->z = 0.0f;
-    particule->setCenter(center);
     //size_t N = 256 * 1024;
 
 
-    /* Initialize the library */
     if (!glfwInit())
         return -1;
 
@@ -70,7 +63,6 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(WIDTH, HEIGHT, "Simulation de fluide", NULL, NULL);
     if (!window)
     {
@@ -78,7 +70,6 @@ int main()
         return -1;
     }
 
-    /* Make the window's context current */
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 
@@ -86,7 +77,6 @@ int main()
         std::cout << "Error!" << std::endl;
     {
         
-
         GLCall(glEnable(GL_BLEND));
         GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
@@ -99,21 +89,43 @@ int main()
         ImGui_ImplOpenGL3_Init(glsl_version);
         ImGui::StyleColorsDark();
 
-        test::TestClearColor test;
+        //création d'un menu
+        test::Test* currentTest = nullptr;
+        test::TestMenu* testMenu = new test::TestMenu(currentTest);
+        currentTest = testMenu;
 
-        /* Loop until the user closes the window */
+        testMenu->RegisterTest<test::TestColor2D>("2D Color");
+        testMenu->RegisterTest<test::TestColor3D>("3D Color");
+        testMenu->RegisterTest<test::TestTexture2D>("2D Texture");
+
+        
+
         while (!glfwWindowShouldClose(window))
         {
+            GLCall(glClearColor(0.0f, 0.0f, 0.0f, 1.0f));
             renderer.Clear();
 
-            test.OnUpdate(0.0f);
-            test.OnRender();
 
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
+
+            if (currentTest)
+            {
+                currentTest->OnUpdate(0.0f);
+                currentTest->OnRender();
+                ImGui::Begin("Test");
+
+                if (currentTest != testMenu && ImGui::Button("<-"))
+                {
+                    delete currentTest;
+                    currentTest = testMenu;
+                }
+                currentTest->OnImGuiRender();
+                
+                ImGui::End();
+            }
             
-            test.OnImGuiRender();
 
             ImGui::Render();
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -122,7 +134,14 @@ int main()
 
             glfwPollEvents();
         }
+        delete currentTest;
+        if (currentTest != testMenu)
+        {
+            delete testMenu;
+        }
     }
+
+    
 
     //Cleanup
     ImGui_ImplOpenGL3_Shutdown();
@@ -134,3 +153,4 @@ int main()
 
 
 
+*/
