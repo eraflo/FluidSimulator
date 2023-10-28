@@ -19,6 +19,12 @@
     <CudaCompile Include="src\cu\main.cu" />
     <CudaCompile Include="src\cu\ParticulesField.cu" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include=".gitattributes" />
+    <None Include=".gitignore" />
+    <None Include="cpp.hint" />
+    <None Include="README.md" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{1DA42BDC-4253-4123-A77F-282306BF268E}</ProjectGuid>
     <RootNamespace>ProgFin2</RootNamespace>

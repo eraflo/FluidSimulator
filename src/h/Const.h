@@ -18,6 +18,7 @@
 #define M_mol 0.018
 #define rho0 1
 #define k0 (Temperature*R_boltz*M_mol)
+#define v 0.001
 
 //Cube
 #define Ne 32
