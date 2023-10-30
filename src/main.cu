@@ -9,7 +9,6 @@
 
 //à bien inclure après glew
 #include "cuda_gl_interop.h"
-#include "device_functions.h"
 #include "device_atomic_functions.h"
 
 
@@ -21,13 +20,12 @@
 
 
 
-#include "../h/Const.h"
-#include "../h/Geometry.h"
-#include "../cuh/ParticulesField.cuh"
+#include "h/Const.h"
+#include "cuh/ParticulesField.cuh"
 
 //Function to retrieve the error message from cuda
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
-inline void gpuAssert(cudaError_t code, char* file, int line, bool abort = true)
+inline void gpuAssert(cudaError_t code, const char* file, int line, bool abort = true)
 {
     if (code != cudaSuccess)
     {
@@ -48,22 +46,22 @@ inline void gpuInfo()
 
 
 //Function to create the grid 1D
-__global__ void createGrid(ParticulesField* part, int* indexTri)
+__global__ void createGrid(ParticulesField* part, GridIndexSorted* indexLinearTri)
 {
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
 
-    // Calcul of the index of the cell in the uniform grid
+    // Calcul of the index of the cell in the uniform grid for each particule
     if (idx < WORKINGSET)
     {
-        int3 pos;
+        float3 pos;
 
-        // Calcul of the position of the cell in the uniform grid
+        // Calcul of the coordinate of the cell where the particule is located in the uniform grid (still in 3D)
         pos.x = floor(part->GetPoint(idx).Position.getX() / h);
         pos.y = floor(part->GetPoint(idx).Position.getY() / h);
         pos.z = floor(part->GetPoint(idx).Position.getZ() / h);
 
-        // Put the index of the cell in the uniform grid
-        indexTri[idx] = pos.z * (int)(DATA_H / h) * (int)(DATA_W / h) + pos.y * (int)(DATA_W / h) + pos.x;
+        // Calcul of the index of the cell in the uniform grid 1D
+        indexLinearTri->indexSorted[idx] = pos.z * (int)(DATA_H / h) * (int)(DATA_W / h) + pos.y * (int)(DATA_W / h) + pos.x;
     }
 }
 
@@ -79,22 +77,21 @@ int main()
 {
     //Creation of the particules field and the grid
     ParticulesField* starting_particules = new ParticulesField();
-    int* grille = new int[WORKINGSET];
-    int* start = new int[DATA_W * DATA_H * DATA_W];
-    int* end = new int[DATA_W * DATA_H * DATA_W];
+    GridIndexSorted* grid1D = new GridIndexSorted();
        
     //Allocation of the memory on the GPU
     ParticulesField* gpuPart = nullptr;
-    int* gpuGrille = nullptr;
-    int* gpuStart = nullptr;
-    int* gpuEnd = nullptr;
+    GridIndexSorted* gpuGrid = nullptr;
 
     gpuErrchk(cudaMalloc((void**)&gpuPart, sizeof(ParticulesField)));
-    gpuErrchk(cudaMalloc((void**)&gpuGrille, sizeof(int) * WORKINGSET));
-    gpuErrchk(cudaMalloc((void**)&gpuStart, sizeof(int) * SizeCube));
-    gpuErrchk(cudaMalloc((void**)&gpuEnd, sizeof(int) * SizeCube));
+    gpuErrchk(cudaMalloc((void**)&gpuGrid, sizeof(GridIndexSorted)));
     gpuErrchk(cudaMemcpy(gpuPart, starting_particules, sizeof(ParticulesField), cudaMemcpyHostToDevice));
 
+    // Display the particules field
+    for (int i = 0; i < WORKINGSET; i++)
+	{
+		std::cout << starting_particules->GetPoint(i).Position.getX() << " " << starting_particules->GetPoint(i).Position.getY() << " " << starting_particules->GetPoint(i).Position.getZ() << std::endl;
+	}
 
     //Dimension of the grid and the block
     dim3 grid(WORKINGSET/BlockSize);
@@ -102,13 +99,30 @@ int main()
 
     //First kernel to create the grid 1D
     std::cout << "Creation of the grid" << std::endl;
-    createGrid << <grid, block >> > (gpuPart, gpuGrille);
+    createGrid << <grid, block >> > (gpuPart, gpuGrid);
 
     gpuErrchk(cudaDeviceSynchronize());
+
+    // Copy the grid from the GPU to the CPU
+    gpuErrchk(cudaMemcpy(grid1D, gpuGrid, sizeof(int) * WORKINGSET, cudaMemcpyDeviceToHost));
+
+    // Display the grid
+    for (int i = 0; i < WORKINGSET; i++)
+	{
+		std::cout << grid1D->indexSorted[i] << std::endl;
+	}
         
     //Thrust part to sort the grid
-    thrust::device_ptr<int> dev_ptr(gpuGrille);
+    std::cout << "Sort of the grid" << std::endl;
+    thrust::device_ptr<int> dev_ptr(gpuGrid->indexSorted);
     thrust::sort(dev_ptr, dev_ptr + WORKINGSET);
+
+    // Display the grid
+    gpuErrchk(cudaMemcpy(grid1D->indexSorted, gpuGrid->indexSorted, sizeof(int) * WORKINGSET, cudaMemcpyDeviceToHost));
+	for (int i = 0; i < WORKINGSET; i++)
+    {
+    std::cout << grid1D->indexSorted[i] << std::endl;
+    }
 
     
     gpuErrchk(cudaDeviceSynchronize());
@@ -116,9 +130,9 @@ int main()
     
 
     gpuErrchk(cudaFree(gpuPart));
-    gpuErrchk(cudaFree(gpuGrille));
+    gpuErrchk(cudaFree(gpuGrid));
     delete starting_particules;
-    delete grille;
+    delete grid1D;
     
 
     return 0;

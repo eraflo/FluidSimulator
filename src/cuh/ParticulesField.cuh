@@ -2,9 +2,8 @@
 #include <cuda.h>
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
-#include "../h/Geometry.h"
 #include "../h/Const.h"
-#include <vector>
+#include "Geometry.cuh"
 
 
 class ParticulesField
@@ -17,29 +16,31 @@ class ParticulesField
 		Vec3 velocity[WORKINGSET];
 		Vec3 pressure_gradient[WORKINGSET];
 		Vec3 laplacien_viscosity[WORKINGSET];
-		int nbneigh[WORKINGSET];
+		int neighbors[WORKINGSET][n_avg];
 		int id[WORKINGSET];
 		float timestep;
 
-	public:
-		__device__ ParticulesField();
+		__host__ float GenCoord(float min, float max);
 
-		float GenCoord(float min, float max);
+	public:
+		HOSTDEVICE ParticulesField();
+
 
 		// Getters
 		HOSTDEVICE Vertex GetPoint(int i);
 		HOSTDEVICE Vec3 GetVelocity(int i);
 		HOSTDEVICE float GetRad(int i);
 		HOSTDEVICE float GetDensity(int i);
-		HOSTDEVICE float GetPressure(int i);
 		HOSTDEVICE float GetMasse(int i);
 		HOSTDEVICE Vec3 GetPressureGradient(int i);
 		HOSTDEVICE Vec3 GetLaplacienViscosity(int i);
 		HOSTDEVICE float GetTimestep();
-		HOSTDEVICE int GetNbneigh(int i);
 		HOSTDEVICE int GetId(int i);
 
 		// Fluid simulation functions
+
+		// Neighbors search
+		__device__ void NeighborsSearch();
 		
 		//Poly6 core (on 1 neighbor)
 		__device__ float Poly6(int neighbor);

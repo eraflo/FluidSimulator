@@ -1,7 +1,8 @@
+#pragma once
 #include "../cuh/ParticulesField.cuh"
 
 
-__device__ ParticulesField::ParticulesField()
+HOSTDEVICE ParticulesField::ParticulesField()
 {
 	for (int i = 0; i < WORKINGSET; i++)
 	{
@@ -13,22 +14,30 @@ __device__ ParticulesField::ParticulesField()
 		Vec4 Col = { 0.0f, 0.0f, 0.0f, 1.0f };
 		point[i].Color = Col;
 		point[i].Position = Pos;
-		rad[i] = 0.2;
+		rad[i] = 0.2f;
 		velocity[i] = { 0, 0, 0 };
 		density[i] = 0.0f;
-		masse[i] = pow(2.0f * rad[i], 3) * 900;
+		masse[i] = (float)pow(2.0f * rad[i], 3) * 900;
 		pressure_gradient[i] = { 0, 0, 0 };
 		laplacien_viscosity[i] = { 0, 0, 0 };
-		nbneigh[i] = 0;
 		id[i] = i;
+		
+		for(int j = 0; j < n_avg; j++)
+		{
+			neighbors[i][j] = NULL;
+		}
+
 	}
 }
 
 // Function to generate random float number between min and max at the initialization of the particules
-float ParticulesField::GenCoord(float min, float max)
+__host__ float ParticulesField::GenCoord(float min, float max)
 {
 	float nRand;
 	nRand = min + ((float)rand() * (max - min + 1) / (RAND_MAX - 1));
+
+	// Limit the number of decimal to 2
+	nRand = floorf(nRand * 100) / 100;
 	return nRand;
 }
 
@@ -52,11 +61,6 @@ HOSTDEVICE float ParticulesField::GetDensity(int i)
 	return density[i];
 }
 
-HOSTDEVICE float ParticulesField::GetPressure(int i)
-{
-	return pressure[i];
-}
-
 HOSTDEVICE float ParticulesField::GetMasse(int i)
 {
 	return masse[i];
@@ -77,14 +81,15 @@ HOSTDEVICE float ParticulesField::GetTimestep()
 	return timestep;
 }
 
-HOSTDEVICE int ParticulesField::GetNbneigh(int i)
-{
-	return nbneigh[i];
-}
-
 HOSTDEVICE int ParticulesField::GetId(int i)
 {
 	return id[i];
+}
+
+// Function to get the neighbors of each particule
+__device__ void ParticulesField::NeighborsSearch()
+{
+
 }
 
 //Poly6 core

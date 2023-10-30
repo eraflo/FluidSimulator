@@ -11,7 +11,7 @@
 
 //Simulation
 #define n_avg 32
-# define M_PI 3.14159265358979323846 
+#define M_PI 3.14159265358979323846 
 #define h 0.8
 #define Temperature 20
 #define R_boltz 8.31446261815324
@@ -30,4 +30,8 @@
 #define SizeCube DATA_W*DATA_H*DATA_D
 
 //Function type
-#define HOSTDEVICE __host__ __device__ inline
+#ifdef __CUDACC__
+#define HOSTDEVICE __host__ __device__
+#else
+#define HOSTDEVICE
+#endif

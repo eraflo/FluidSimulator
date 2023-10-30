@@ -1,6 +1,5 @@
 #pragma once
-#include "Const.h"
-#include <vector>
+#include "../h/Const.h"
 
 class Vec3
 {
@@ -11,9 +10,9 @@ class Vec3
 		HOSTDEVICE Vec3() : x(0), y(0), z(0) {}
 		HOSTDEVICE Vec3(float x, float y, float z) : x(x), y(y), z(z) {}
 		// Accessors
-		HOSTDEVICE float getX() const { return this->x; }
-		HOSTDEVICE float getY() const { return y; }
-		HOSTDEVICE float getZ() const { return z; }
+		HOSTDEVICE float getX() { return this->x; } 
+		HOSTDEVICE float getY() { return y; }
+		HOSTDEVICE float getZ() { return z; }
 		HOSTDEVICE void setX(float x) { this->x = x; }
 		HOSTDEVICE void setY(float y) { this->y = y; }
 		HOSTDEVICE void setZ(float z) { this->z = z; }
@@ -33,5 +32,11 @@ struct Vertex
 {
 	Vec3 Position;
 	Vec4 Color;
+};
+
+struct GridIndexSorted {
+	int indexSorted[WORKINGSET];
+	int startingCell[SizeCube];
+	int endingCell[SizeCube];
 };
 
